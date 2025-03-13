@@ -1,0 +1,27 @@
+# Ignorar el entorno virtual
+entorno1/
+
+# Ignorar archivos de caché y configuración de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar archivos de configuración de entorno
+.env
+*.env
+
+# Ignorar archivos de dependencias generadas
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Ignorar archivos de Jupyter Notebook checkpoints (si usas Jupyter)
+.ipynb_checkpoints/
+
+# Ignorar archivos de logs
+logs/
+*.log
+
+# Ignorar archivos de configuraciones de IDEs (como VSCode o PyCharm)
+.vscode/
+.idea/
