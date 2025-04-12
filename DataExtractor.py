@@ -270,7 +270,7 @@ class DataExtractor:
 
     def model_topics(self, num_topics: int = 5, passes: int = 10) -> list:
         if self.data is None or 'text' not in self.data.columns:
-            print("❌ No hay datos. Carga los datos primero.")
+            print(" No hay datos. Carga los datos primero.")
             return []
 
         # Limpieza previa básica si no existe clean_text
@@ -291,7 +291,7 @@ class DataExtractor:
 
         topics = lda_model.print_topics(num_words=6)
         for i, topic in enumerate(topics):
-            print(f"\n🧠 Tópico {i + 1}:")
+            print(f"\n Tópico {i + 1}:")
             palabras = topic[1].split(' + ')
             for palabra in palabras:
                 peso, palabra_clave = palabra.split('*')
@@ -302,7 +302,7 @@ class DataExtractor:
 
     def analyze_sentiment(self, method: str = 'textblob') -> pd.DataFrame:
         if self.data is None or 'text' not in self.data.columns:
-            print("❌ No hay datos cargados.")
+            print(" No hay datos cargados.")
             return pd.DataFrame()
 
         self.data['clean_text'] = self.data['text'].apply(self.clean_text)
@@ -312,20 +312,20 @@ class DataExtractor:
             self.data['sentiment_subjectivity'] = self.data['clean_text'].apply(
                 lambda t: TextBlob(t).sentiment.subjectivity)
         else:
-            from spacytextblob.spacytextblob import SpacyTextBlob
+
 
             nlp = spacy.load("en_core_web_sm")
             nlp.add_pipe("spacytextblob")
             self.data['sentiment_polarity'] = self.data['clean_text'].apply(lambda t: nlp(t)._.polarity)
             self.data['sentiment_subjectivity'] = self.data['clean_text'].apply(lambda t: nlp(t)._.subjectivity)
 
-        print("✅ Análisis de sentimiento completado.")
+        print(" Análisis de sentimiento completado.")
         return self.data
 
 
     def parse_and_summarize(self, summary_ratio: float = 0.3) -> str:
         if self.data is None or 'text' not in self.data.columns:
-            print("❌ No hay datos.")
+            print(" No hay datos.")
             return ""
 
         text = " ".join(self.data['text'].dropna())
@@ -343,14 +343,14 @@ class DataExtractor:
         top_sentences = sorted(sentence_scores, key=sentence_scores.get, reverse=True)[:n]
 
         summary = " ".join([s for s in sentences if s in top_sentences])
-        print("\n📝 Resumen generado:")
+        print("\n Resumen generado:")
         print(summary)
         return summary
 
 
     def plot_sentiment_distribution(self, output_path: str = "sentiment_distribution.png"):
         if self.data is None or 'sentiment_polarity' not in self.data.columns:
-            print("❌ Asegúrate de haber ejecutado el análisis de sentimiento primero.")
+            print(" Asegúrate de haber ejecutado el análisis de sentimiento primero.")
             return
 
         plt.figure(figsize=(8, 5))
@@ -361,14 +361,14 @@ class DataExtractor:
         plt.grid(True)
         plt.tight_layout()
         plt.savefig(output_path)
-        print(f"📈 Gráfico de sentimiento guardado como '{output_path}'")
+        print(f" Gráfico de sentimiento guardado como '{output_path}'")
         plt.close()
 
         # Agregar tabla resumen
         neg = len(self.data[self.data['sentiment_polarity'] < 0])
         neu = len(self.data[self.data['sentiment_polarity'] == 0])
         pos = len(self.data[self.data['sentiment_polarity'] > 0])
-        print("\n📊 Tabla de resumen de sentimiento:")
+        print("\n Tabla de resumen de sentimiento:")
         print(pd.DataFrame({
             'Sentimiento': ['Negativo', 'Neutro', 'Positivo'],
             'Cantidad': [neg, neu, pos]
@@ -377,16 +377,16 @@ class DataExtractor:
 
     def visualize_dependency_tree(self, index: int = 0, output_html: str = "dependency_tree.html"):
         if self.data is None or 'clean_text' not in self.data.columns:
-            print("❌ No hay datos procesados. Ejecuta primero analyze_sentiment().")
+            print(" No hay datos procesados. Ejecuta primero analyze_sentiment().")
             return
 
         nlp = spacy.load("en_core_web_sm")
         doc = nlp(self.data['clean_text'].iloc[index])
 
-        print(f"\n🌳 Árbol sintáctico de la oración {index} guardado en {output_html}")
+        print(f"\n Árbol sintáctico de la oración {index} guardado en {output_html}")
 
         svg = displacy.render(doc, style="dep", jupyter=False)
         with open(output_html, "w", encoding="utf-8") as f:
             f.write(svg)
 
-        print(f"✅ Puedes abrir el archivo HTML generado para ver el árbol sintáctico.")
+        print(f" Puedes abrir el archivo HTML generado para ver el árbol sintáctico.")
