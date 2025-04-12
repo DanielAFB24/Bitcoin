@@ -68,3 +68,58 @@ El método analytics_hashtags_extended realiza:
 
 # Ejecución 
 Entrar al proyecto y ejecutar el comando python main.py. Realizara el procedimiento explicado para posteriormente aparecer la imagen generada por  WordCloud.
+
+# Documentación de Técnicas y Resultados parte II
+## Modelado de Tópicos con LDA (Latent Dirichlet Allocation)
+- Técnica Aplicada: Se aplicó LDA con la librería gensim para descubrir temas (tópicos) dominantes en los tweets. El texto fue previamente limpiado y tokenizado, y se eliminaron stopwords para mejorar la calidad de los temas.
+- Justificación: LDA permite encontrar grupos de palabras que tienden a aparecer juntas, lo cual revela temas latentes en el corpus de textos. Es muy útil en análisis exploratorio de contenido.
+
+Resultado: Se imprimieron 5 tópicos. Cada tópico contiene palabras clave con sus pesos. Ejemplo:
+
+🧠 Tópico 1:
+ - "#tesla": 0.051
+ - "#": 0.039
+ - "you": 0.014
+ - "tesla": 0.013
+ - "tsla": 0.012
+ - "model": 0.008
+
+## Análisis de Sentimiento (TextBlob y spaCy)
+- Técnica Aplicada: Se utilizó TextBlob (y opcionalmente spaCyTextBlob) para calcular la polaridad y subjetividad de cada texto. Estos valores se guardaron en las columnas sentiment_polarity y sentiment_subjectivity.
+
+- Justificación: Ayuda a identificar la actitud (positiva/negativa) de los usuarios hacia los temas comentados.
+
+- Resultado: Se imprimió un mensaje indicando la finalización del análisis. Además, se visualiza la distribución de polaridad con un histograma:
+
+## Gráfico de Distribución de Sentimientos:
+
+Se observa la frecuencia de tweets negativos, neutros y positivos.
+
+## Parsing y Árboles Sintácticos
+- écnica Aplicada: Con spaCy, se cargó un modelo de procesamiento de lenguaje para visualizar la estructura gramatical de una oración mediante árboles de dependencias (dependency trees).
+
+- Justificación: Esto permite entender cómo se relacionan las palabras dentro de una frase, útil para análisis sintáctico profundo.
+
+- Resultado: Se muestra visualmente un árbol sintáctico en navegador. Cada palabra conecta con su “palabra padre”, reflejando la estructura de la oración.
+
+## Resumen Extractivo (Método Tradicional con Frecuencia de Palabras)
+- Técnica Aplicada: Se utilizó nltk para dividir el texto en oraciones, calcular la frecuencia de palabras y seleccionar las más representativas para formar un resumen.
+
+- Justificación: Permite sintetizar los puntos clave del corpus de forma automática.
+
+- Resultado:  Resumen generado: Se imprime en consola una selección de frases relevantes, representativas del contenido total del corpus.
+
+## Intrucciones para reproducir
+Instalar :
+- pip install pandas matplotlib nltk gensim textblob spacy wordcloud
+- python -m textblob.download_corpora
+- python -m nltk.downloader punkt stopwords
+- python -m spacy download en_core_web_sm
+
+Crear archivo .env con tu clave de RapidAPI:
+
+```.env
+RAPIDAPI_KEY=tu_clave_aqui
+```
+
+ejecutar python main.py

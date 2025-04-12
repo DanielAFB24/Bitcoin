@@ -1,7 +1,26 @@
 from DataExtractor import DataExtractor
 
-extractor = DataExtractor("Bitcoin_tweets_dataset_2.csv", chunksize=100000)
+# Paso 1: Crear extractor con un parámetro de búsqueda
+extractor = DataExtractor()
+extractor.load_data_api(query="Tesla", max_results=200)
 
-# Cargar los datos del archivo CSV
-extractor.load_data()
-extractor.generate_hashtag_wordcloud()
+# Paso 2: Analizar hashtags
+resultados = extractor.analytics_hashtags_extended()
+
+# Paso 3: Nube de palabras
+extractor.generate_hashtag_wordcloud(resultados.get('overall'))
+
+# Paso 4: Modelado de tópicos
+extractor.model_topics(num_topics=5)
+
+# Paso 5: Análisis de sentimiento
+extractor.analyze_sentiment(method='textblob')
+
+# Paso 6: Gráfico de distribución de sentimiento
+extractor.plot_sentiment_distribution()
+
+# Paso 7: Resumen extractivo
+extractor.parse_and_summarize(summary_ratio=0.3)
+
+# Paso 8: Árbol sintáctico del primer texto limpio
+extractor.visualize_dependency_tree(index=0)
