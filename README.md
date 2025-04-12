@@ -70,6 +70,35 @@ El método analytics_hashtags_extended realiza:
 Entrar al proyecto y ejecutar el comando python main.py. Realizara el procedimiento explicado para posteriormente aparecer la imagen generada por  WordCloud.
 
 # Documentación de Técnicas y Resultados parte II
+
+# Twitter Advanced Text Analysis
+
+Este proyecto implementa un análisis avanzado de textos extraídos desde la API de Twitter a través de RapidAPI. Incluye extracción de datos, preprocesamiento, modelado de tópicos (LDA), análisis de sentimientos y visualización de estructuras sintácticas.
+
+## 📌 Fuente de datos
+
+Se utiliza la API "Twitter API v2" disponible en [RapidAPI](https://rapidapi.com/alexanderxbx/api/twitter-api45). Esta API permite realizar búsquedas de tweets utilizando parámetros personalizados como:
+
+- `query`: palabra clave o hashtag a buscar (por ejemplo, `#Tesla`)
+- `limit`: número máximo de tweets (ej. 200)
+- `start`: fecha de inicio (ej. `2025-04-01`)
+
+---
+
+## 🧠 Metodología
+
+### 1. Extracción de Datos
+
+Se conecta con la API usando la librería `requests` y se configuran los headers con claves seguras a través del archivo `.env`.
+
+```python
+url = "https://twitter-api45.p.rapidapi.com/search.php"
+headers = {
+    "X-RapidAPI-Key": os.getenv("RAPIDAPI_KEY"),
+    "X-RapidAPI-Host": "twitter-api45.p.rapidapi.com"
+}
+```
+
 ## Modelado de Tópicos con LDA (Latent Dirichlet Allocation)
 - Técnica Aplicada: Se aplicó LDA con la librería gensim para descubrir temas (tópicos) dominantes en los tweets. El texto fue previamente limpiado y tokenizado, y se eliminaron stopwords para mejorar la calidad de los temas.
 - Justificación: LDA permite encontrar grupos de palabras que tienden a aparecer juntas, lo cual revela temas latentes en el corpus de textos. Es muy útil en análisis exploratorio de contenido.
@@ -110,11 +139,11 @@ Se observa la frecuencia de tweets negativos, neutros y positivos.
 - Resultado:  Resumen generado: Se imprime en consola una selección de frases relevantes, representativas del contenido total del corpus.
 
 ## Intrucciones para reproducir
-Instalar :
-- pip install pandas matplotlib nltk gensim textblob spacy wordcloud
-- python -m textblob.download_corpora
-- python -m nltk.downloader punkt stopwords
-- python -m spacy download en_core_web_sm
+
+```
+pip install -r requirements.txt
+```
+
 
 Crear archivo .env con tu clave de RapidAPI:
 
@@ -122,4 +151,11 @@ Crear archivo .env con tu clave de RapidAPI:
 RAPIDAPI_KEY=tu_clave_aqui
 ```
 
-ejecutar python main.py
+ejecutar python main.py.
+
+El proyecto genera :
+- Gráfico de sentimiento guardado como 'sentiment_distribution.png'
+- Tabla de resumen de sentimiento (Por consola)
+- Árbol sintáctico con una de las oraciones guardado en dependency_tree.html
+- Resumen de los comentarios mas destacados
+

@@ -1,0 +1,10 @@
+pandas
+requests
+python-dotenv
+nltk
+textblob
+gensim
+wordcloud
+matplotlib
+spacy
+spacytextblob
