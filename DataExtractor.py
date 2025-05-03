@@ -15,6 +15,14 @@ from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize, word_tokenize
 import spacy
 from spacy import displacy
+import time
+import networkx as nx
+from networkx.algorithms import community
+from transformers import pipeline
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+
 
 
 
@@ -29,9 +37,7 @@ class DataExtractor:
 
     def load_data_api(self, query: str = "#tesla", max_results: int = 200,
                       output_file: str = "tweets_from_api.csv") -> pd.DataFrame:
-        from dotenv import load_dotenv
-        import json
-        import time
+
 
         load_dotenv()
 
@@ -48,8 +54,8 @@ class DataExtractor:
 
         while total_fetched < max_results:
             params = {
-                "query": query,
-                "limit": str(min(page_limit, max_results - total_fetched))
+                "query": query
+
             }
             if next_cursor:
                 params["cursor"] = next_cursor
@@ -210,6 +216,8 @@ class DataExtractor:
             }
 
             print(f'Número total de hashtags: {len(overall)}')
+
+            self.analytics = analytics
             return analytics
 
         else:
@@ -390,3 +398,217 @@ class DataExtractor:
             f.write(svg)
 
         print(f" Puedes abrir el archivo HTML generado para ver el árbol sintáctico.")
+
+
+    def build_interaction_graph(self) -> nx.DiGraph:
+        G = nx.DiGraph()
+
+        if self.data is None:
+            print(" No hay datos para generar el grado .")
+            return G
+
+
+
+        df = self.data.dropna(subset=['user_name', 'text'])
+
+        for _ , row in df.iterrows():
+            user = row['user_name'].lower().strip()
+            text = row['text'].lower().strip()
+
+            if not isinstance(text, str):
+                continue
+
+            G.add_node(user)
+            menciones = re.findall(r"@(\w{1,15})", text)
+
+            for mencion in menciones:
+                G.add_edge(user,mencion)
+
+        print(f"Grafo construido con {G.number_of_nodes()} nodos y {G.number_of_edges()} aristas.")
+        self.graph = G
+        return G
+
+    def analyze_network(self, G: nx.DiGraph):
+
+        """
+         Calcula métricas de red y detecta comunidades utilizando el algoritmo de Louvain.
+         Imprime estadísticas y genera una visualización básica.
+         """
+
+        print("************************* ANALISIS GRAGO ********************************")
+
+        if G.number_of_nodes() == 0:
+            print("El grafo está vacío. Verifica si hay datos cargados.")
+            return
+
+        # Calculamos los frados de salida
+
+        out_degs = dict(G.out_degree())
+
+        top_out = sorted(out_degs.items(), key=lambda x: x[1], reverse=True)[:5]
+        print("\n🔸 Top 5 usuarios que más mencionan a otros (grado de salida):")
+        for user, grado in top_out:
+            print(f" - {user}: {grado} menciones")
+
+        in_degs = dict(G.in_degree())
+
+        top_in = sorted(in_degs.items(), key=lambda x: x[1], reverse=True)[:5]
+        print("\n🔹 Top 5 usuarios más mencionados (grado de entrada):")
+        for user, grado in top_in:
+            print(f" - {user}: mencionado {grado} veces")
+
+        G_undirected = G.to_undirected()
+
+        # Betweenness Centrality
+
+        bet_centrality = nx.betweenness_centrality(G, k=10, normalized=True)
+        top5_node_centrality = sorted(bet_centrality.items(), key=lambda x: x[1], reverse=True)[:5]
+
+        print("\n🎯 Top 5 usuarios puente (centralidad de intermediación):")
+        print("   Usuarios que aparecen con más frecuencia en los caminos más cortos entre otros.")
+        for user, score in top5_node_centrality:
+            print(f" - {user}: {score:.4f}")
+
+        # Closeness Centrality
+        closeness_centrality = nx.closeness_centrality(G_undirected)
+        top5_closeness = sorted(closeness_centrality.items(), key=lambda x: x[1], reverse=True)[:5]
+
+        print("\n🎯 Top 5 usuarios más accesibles (centralidad de cercanía):")
+        print("   Usuarios que pueden llegar rápidamente a otros usuarios en la red (menor número de saltos promedio).")
+        for user, score in top5_closeness:
+            print(f" - {user}: {score:.4f}")
+
+        # Calculamos Egevector Centrality
+        eigenvector_centrality = nx.eigenvector_centrality(G_undirected, max_iter=1000)
+        top5_eigevector = sorted(eigenvector_centrality.items(), key=lambda x: x[1])[:5]
+
+        print("\n🎯 Top 5 usuarios con mayor prestigio estructural (centralidad de autovector):")
+        print("   Usuarios conectados a otros usuarios influyentes, según la estructura de la red.")
+        for user, score in top5_eigevector:
+            print(f" - {user}: {score:.4f}")
+
+        print("**************************** COMUNIDADES ************************")
+
+        try:
+            communities_louvain = community.louvain_communities(G_undirected, weight=None, resolution=1.0, seed=None)
+            # 'communities_louvain' es una lista de conjuntos (cada conjunto = comunidad)
+            print(f"Número de comunidades detectadas: {len(communities_louvain)}")
+            print(f"Comunidades (primeras 3): {list(communities_louvain)[:3]}")
+        except Exception as e:
+            print("Error al detectar comunidades con Louvain:", e)
+            communities = []
+
+        ## Generación grafico
+
+        plt.figure(figsize=(10, 7))
+        pos = nx.spring_layout(G, seed=42)
+        nx.draw_networkx_nodes(G, pos, node_size=50)
+        nx.draw_networkx_edges(G, pos, alpha=0.3)
+        plt.title("Visualización básica del grafo de interacciones")
+        plt.axis("off")
+        plt.tight_layout()
+        plt.show()
+
+
+        # Guardamos la datos
+
+        self.top_out_degree = top_out
+        self.top_in_degree = top_in
+        self.top_betweenness = top5_node_centrality
+        self.top_closeness = top5_closeness
+        self.top_eigenvector = top5_eigevector
+
+    def chat_local_llm(self, prompt: str = None):
+
+        #Nombre del modelo
+        model_name = "gemma-2-2b-it"
+        #Obtenemos el token correspondiente al modelo
+        token = AutoTokenizer.from_pretrained(model_name)
+        #Descargamos el modelo
+        model = AutoModelForCausalLM.from_pretrained(model_name)
+        # Ponemos el modelo en modo evaluación para que no actualice los pesos
+        model.eval();
+        # Definimos que use GPU si tenemos disponibles
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
+
+        print("Modelo cargado. ¡Listo para chatear!\n")
+        print("Escribe 'exit' o 'quit' para salir.\n")
+
+        # Generamos un bucle para generar mensajes
+
+        while True:
+            prompt = input("Tú: ")
+
+            if prompt.lower().strip() in ["exit", "quit"]:
+                print("Saliendo del chat...")
+                break
+
+            # Genera el input de entra de forma que el modelo pueda entenderlo
+            input_ids = token.encode(prompt, return_tensors="pt").to(device)
+
+            #Desactivamos temporalmente el calculo de la gradiente
+            with torch.no_grad():
+                output_ids = model.generate(
+                    input_ids,
+                    max_length=128,
+                    do_sample=True,
+                    top_p=0.9,
+                    temperature=0.7,
+                    pad_token_id=token.eos_token_id
+                )
+
+            generated_text = token.decode(output_ids[0], skip_special_tokens=True)
+            response = generated_text[len(prompt):].strip()
+
+            print(f"LLM: {response}\n")
+
+    def generate_prompt_from_network(self, G: nx.DiGraph) -> str:
+
+        if G.number_of_nodes() == 0:
+            return "El grafo está vacío. No se puede generar un análisis."
+
+        if not hasattr(self, "top_out_degree") or not hasattr(self, "analytics"):
+            return "Faltan datos de análisis. No se ha ejecutado correctamente 'analyze_network' y 'analytics_hashtags_extended'."
+
+        # obtenemos el top 3
+        top3_users = self.top_out_degree[:3]
+
+        usuarios = [f"{user} (menciones salientes: {grado})" for user, grado in top3_users]
+
+        overall_df = self.analytics.get("overall")
+
+        if overall_df is not None and not overall_df.empty:
+            hashtag_texto = overall_df.iloc[0]["hashtag"]
+        else:
+            hashtag_texto = "ninguno"
+
+        prompt = (
+                "Se ha analizado una red de interacciones en Twitter basada en menciones.\n\n"
+                f"Los 3 usuarios más activos (por menciones salientes) son:\n"
+                + "\n".join(f" - {u}" for u in usuarios) +
+                f"\n\nEl hashtag más frecuente en la red es: #{hashtag_texto}\n\n"
+                "¿Qué factores podrían explicar por qué estos usuarios lideran las menciones "
+                "y por qué este hashtag domina la conversación?\n"
+                "Responde con un análisis interpretativo."
+        )
+
+        return prompt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -24,3 +24,18 @@ extractor.parse_and_summarize(summary_ratio=0.3)
 
 # Paso 8: Árbol sintáctico del primer texto limpio
 extractor.visualize_dependency_tree(index=0)
+
+# Paso 9 Generar Grafo
+G = extractor.build_interaction_graph()
+
+# Paso 10 : Analisis Grafo
+extractor.analyze_network(G)
+
+# Paso 11 : Chat local
+extractor.chat_local_llm()
+
+# Paso 12 : Generar Pront
+extractor.generate_prompt_from_network(G)
+
+
+

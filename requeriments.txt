@@ -8,3 +8,5 @@ wordcloud
 matplotlib
 spacy
 spacytextblob
+networkx
+torch transformers huggingface_hub
