@@ -521,7 +521,7 @@ class DataExtractor:
     def chat_local_llm(self, prompt: str = None):
 
         #Nombre del modelo
-        model_name = "gemma-2-2b-it"
+        model_name = "google/gemma-2-2b-it"
         #Obtenemos el token correspondiente al modelo
         token = AutoTokenizer.from_pretrained(model_name)
         #Descargamos el modelo
@@ -538,19 +538,21 @@ class DataExtractor:
         # Generamos un bucle para generar mensajes
 
         while True:
-            prompt = input("Tú: ")
-
-            if prompt.lower().strip() in ["exit", "quit"]:
+            prompt = input("Tú: ").strip()
+            if prompt.lower() in {"exit", "quit"}:
                 print("Saliendo del chat...")
                 break
 
-            # Genera el input de entra de forma que el modelo pueda entenderlo
-            input_ids = token.encode(prompt, return_tensors="pt").to(device)
+            if not prompt:
+                continue
 
-            #Desactivamos temporalmente el calculo de la gradiente
+                # Preparamos entrada correctamente
+            inputs = token(prompt, return_tensors="pt", padding=True).to(device)
+
             with torch.no_grad():
                 output_ids = model.generate(
-                    input_ids,
+                    input_ids=inputs["input_ids"],
+                    attention_mask=inputs["attention_mask"],
                     max_length=128,
                     do_sample=True,
                     top_p=0.9,
@@ -560,6 +562,9 @@ class DataExtractor:
 
             generated_text = token.decode(output_ids[0], skip_special_tokens=True)
             response = generated_text[len(prompt):].strip()
+
+            print("DEBUG → Texto generado completo:")
+            print(generated_text)
 
             print(f"LLM: {response}\n")
 
@@ -579,7 +584,8 @@ class DataExtractor:
         overall_df = self.analytics.get("overall")
 
         if overall_df is not None and not overall_df.empty:
-            hashtag_texto = overall_df.iloc[0]["hashtag"]
+            hashtag_texto = overall_df.iloc[0]['frequency']
+
         else:
             hashtag_texto = "ninguno"
 
@@ -592,6 +598,7 @@ class DataExtractor:
                 "y por qué este hashtag domina la conversación?\n"
                 "Responde con un análisis interpretativo."
         )
+
 
         return prompt
 

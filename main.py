@@ -32,10 +32,12 @@ G = extractor.build_interaction_graph()
 extractor.analyze_network(G)
 
 # Paso 11 : Chat local
-extractor.chat_local_llm()
+#extractor.chat_local_llm()
 
 # Paso 12 : Generar Pront
-extractor.generate_prompt_from_network(G)
+pront = extractor.generate_prompt_from_network(G)
+
+print(pront)
 
 
 
