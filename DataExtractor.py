@@ -184,6 +184,7 @@ class DataExtractor:
             data_exploded = data.explode('Only_hashtag')
             data_exploded = data_exploded[data_exploded['Only_hashtag'].notnull()]
             ## AÑADIR DATA_EXPLODED A CSSV
+            data_exploded.to_csv("hashtags_exploded.csv", index=False, encoding="utf-8")
             # 5. Análisis
             overall = (
                 data_exploded['Only_hashtag']
