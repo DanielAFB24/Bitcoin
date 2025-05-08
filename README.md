@@ -144,7 +144,6 @@ Se observa la frecuencia de tweets negativos, neutros y positivos.
 pip install -r requirements.txt
 ```
 
-
 Crear archivo .env con tu clave de RapidAPI:
 
 ```.env
@@ -158,4 +157,114 @@ El proyecto genera :
 - Tabla de resumen de sentimiento (Por consola)
 - Árbol sintáctico con una de las oraciones guardado en dependency_tree.html
 - Resumen de los comentarios mas destacados
+
+
+#  Interacción y Análisis de Redes en Twitter
+
+
+## 2. Construcción del Grafo de Interacciones
+
+### Método: `build_interaction_graph`
+
+```python
+def build_interaction_graph(self) -> nx.DiGraph
+```
+
+Construye un grafo dirigido en el que los nodos representan usuarios, y las aristas indican menciones de un usuario a otro dentro del texto.
+
+####  Requisitos
+- `self.data`: debe contener las columnas `user_name` y `text`.
+- Los textos se normalizan (minúsculas y sin espacios).
+
+####  Lógica
+- Se filtran textos vacíos o nulos.
+- Se extraen menciones con regex: `@(\w{1,15})`.
+- Se añade un nodo por cada usuario.
+- Se crea una arista desde el usuario emisor hacia el usuario mencionado.
+
+####  Ejemplo de uso:
+```python
+grafo = extractor.build_interaction_graph()
+```
+
+####  Resultado:
+- Grafo dirigido (`nx.DiGraph`) guardado también en `self.graph`.
+- Mensaje en consola con el número de nodos y aristas.
+
+---
+
+## 3. Análisis de la Red
+
+### Método: `analyze_network`
+
+```python
+def analyze_network(self, G: nx.DiGraph)
+```
+
+Analiza el grafo generado con métricas de red y detecta comunidades con Louvain. También genera una visualización básica.
+
+#### ✏️ Estadísticas Calculadas:
+-  **Top 5 usuarios que más mencionan** (grado de salida).
+-  **Top 5 usuarios más mencionados** (grado de entrada).
+-  **Top 5 en centralidad de intermediación** (usuarios puente).
+-  **Top 5 en centralidad de cercanía** (usuarios accesibles).
+-  **Top 5 en centralidad de autovector** (usuarios con prestigio estructural).
+-  **Detección de comunidades** con Louvain (requiere red no dirigida).
+
+####  Visualización:
+Se genera un grafo con `matplotlib` usando `spring_layout` y se dibujan nodos y aristas con bajo nivel de detalle.
+
+####  Resultados Guardados:
+- `self.top_out_degree`
+- `self.top_in_degree`
+- `self.top_betweenness`
+- `self.top_closeness`
+- `self.top_eigenvector`
+
+---
+
+## 4. Chat con Modelo de Lenguaje Local
+
+### Método: `chat_local_llm`
+
+```python
+def chat_local_llm(self, prompt: str = None)
+```
+
+Carga e interactúa con un modelo de lenguaje local (`google/gemma-2-2b-it`) en consola.
+
+####  Flujo:
+- Carga el modelo y el tokenizador desde HuggingFace.
+- Usa GPU si está disponible.
+- Permite ingresar un `prompt` o interactuar dinámicamente por consola.
+- Imprime la respuesta generada por el modelo.
+
+---
+
+## 5. Generación de Prompts desde la Red
+
+### Método: `generate_prompt_from_network`
+
+```python
+def generate_prompt_from_network(self, G: nx.DiGraph) -> str
+```
+
+Genera un prompt en lenguaje natural basado en los análisis de red para alimentar un modelo LLM.
+
+####  Detalles:
+- Usa el top 3 de usuarios con mayor grado de salida.
+- Usa el hashtag más frecuente extraído del análisis extendido.
+- Devuelve un string con una pregunta interpretativa lista para ser usada con un LLM.
+
+####  Ejemplo de Prompt:
+
+```
+Se ha analizado una red de interacciones en Twitter basada en menciones...
+
+Los 3 usuarios más activos...
+El hashtag más frecuente...
+¿Qué factores podrían explicar...
+```
+
+---
 

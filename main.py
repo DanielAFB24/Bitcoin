@@ -31,11 +31,13 @@ G = extractor.build_interaction_graph()
 # Paso 10 : Analisis Grafo
 extractor.analyze_network(G)
 
-# Paso 11 : Chat local
-#extractor.chat_local_llm()
+
 
 # Paso 12 : Generar Pront
 pront = extractor.generate_prompt_from_network(G)
+
+# Paso 11 : Chat local
+extractor.chat_local_llm(pront)
 
 print(pront)
 

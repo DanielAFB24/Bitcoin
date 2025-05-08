@@ -183,7 +183,7 @@ class DataExtractor:
             # 4. Explota los hashtags
             data_exploded = data.explode('Only_hashtag')
             data_exploded = data_exploded[data_exploded['Only_hashtag'].notnull()]
-
+            ## AÑADIR DATA_EXPLODED A CSSV
             # 5. Análisis
             overall = (
                 data_exploded['Only_hashtag']
@@ -321,8 +321,14 @@ class DataExtractor:
                 lambda t: TextBlob(t).sentiment.subjectivity)
         else:
 
+            try:
+                nlp = spacy.load("en_core_web_sm")
+            except OSError:
+                print(" El modelo 'en_core_web_sm' no está instalado. Instalando...")
+                spacy.cli.download("en_core_web_sm")
+                nlp = spacy.load("en_core_web_sm")
 
-            nlp = spacy.load("en_core_web_sm")
+            ## nlp = spacy.load("en_core_web_sm")
             nlp.add_pipe("spacytextblob")
             self.data['sentiment_polarity'] = self.data['clean_text'].apply(lambda t: nlp(t)._.polarity)
             self.data['sentiment_subjectivity'] = self.data['clean_text'].apply(lambda t: nlp(t)._.subjectivity)
@@ -535,10 +541,14 @@ class DataExtractor:
         print("Modelo cargado. ¡Listo para chatear!\n")
         print("Escribe 'exit' o 'quit' para salir.\n")
 
+        print("#################################################")
+        print("############ CHAT LOCAL IA ######################")
+
         # Generamos un bucle para generar mensajes
 
         while True:
-            prompt = input("Tú: ").strip()
+            if prompt is  None:
+                prompt = input("Tú: ").strip()
             if prompt.lower() in {"exit", "quit"}:
                 print("Saliendo del chat...")
                 break
@@ -553,7 +563,7 @@ class DataExtractor:
                 output_ids = model.generate(
                     input_ids=inputs["input_ids"],
                     attention_mask=inputs["attention_mask"],
-                    max_length=128,
+                    max_length=20000,
                     do_sample=True,
                     top_p=0.9,
                     temperature=0.7,
@@ -567,6 +577,8 @@ class DataExtractor:
             print(generated_text)
 
             print(f"LLM: {response}\n")
+
+            prompt = None
 
     def generate_prompt_from_network(self, G: nx.DiGraph) -> str:
 
